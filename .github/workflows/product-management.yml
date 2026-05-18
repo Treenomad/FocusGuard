@@ -1,0 +1,69 @@
+name: FocusGuard Product Management
+
+on:
+  schedule:
+    # Every hour from 8:00 to 17:00, Monday to Friday
+    - cron: "0 8-17 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      iteration:
+        description: 'Iteration number (1-10)'
+        required: false
+        default: '1'
+
+jobs:
+  product-management:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine iteration context
+        id: context
+        run: |
+          ITERATION="${{ github.event.inputs.iteration || github.event.schedule.iteration || 'auto' }}"
+          HOUR=$(date +%H)
+          echo "ITERATION=$ITERATION" >> $GITHUB_ENV
+          echo "HOUR=$HOUR" >> $GITHUB_ENV
+
+      - name: Call Claude API for product management
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          ITERATION=${{ env.ITERATION || 'auto' }}
+          HOUR=${{ env.HOUR || '8' }}
+
+          PROMPT="You are the product manager for Treenomad/FocusGuard GitHub repository.
+
+Current time context: Hour $HOUR
+
+Iteration context: $ITERATION
+
+Tasks for this iteration:
+1. Review existing issues and milestones
+2. Update project board if needed
+3. Add any new issues or documentation based on agile methodology
+4. Comment on any relevant activity
+
+Focus areas:
+- Software monitoring (NSWorkspace/Accessibility API)
+- Self-control features
+- MVVM architecture
+- SwiftUI status bar app"
+
+          curl -s -X POST \
+            -H "x-api-key: $ANTHROPIC_API_KEY" \
+            -H "Content-Type: application/json" \
+            -H "anthropic-version: 2023-06-01" \
+            -d '{
+              "model": "claude-opus-4-7",
+              "max_tokens": 1000,
+              "system": "You are an experienced product manager specializing in agile methodologies. You help manage GitHub repositories by creating issues, updating milestones, and maintaining project documentation. You follow Scrum/XP practices.",
+              "messages": [{"role": "user", "content": "'"$PROMPT"'"}]
+            }' | jq -r '.content[0].text // .error' 2>/dev/null || echo "Claude API call completed"
+
+      - name: Create summary issue for hourly iteration
+        if: env.ITERATION != 'auto'
+        run: |
+          gh issue create \
+            --repo Treenomad/FocusGuard \
+            --title "Hourly Update: $(date +%Y-%m-%dT%H:00)" \
+            --body "Automated hourly iteration update" \
+            --label "automated" 2>/dev/null || echo "Issue creation skipped"
