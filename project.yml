@@ -1,0 +1,42 @@
+name: FocusGuard
+options:
+  bundleIdPrefix: com.treenomad
+  deploymentTarget:
+    macOS: "12.0"
+  xcodeVersion: "14.0"
+  generateEmptyDirectories: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    MACOSX_DEPLOYMENT_TARGET: "12.0"
+    CODE_SIGN_IDENTITY: "-"
+    CODE_SIGNING_REQUIRED: NO
+    CODE_SIGN_ENTITLEMENTS: ""
+
+targets:
+  FocusGuard:
+    type: application
+    platform: macOS
+    sources:
+      - path: FocusGuard
+        type: group
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.treenomad.FocusGuard
+        INFOPLIST_FILE: FocusGuard/Info.plist
+        PRODUCT_NAME: FocusGuard
+        COMBINE_HIDPI_IMAGES: YES
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks"
+        ENABLE_HARDENDE_RUNTIME: NO
+    dependencies:
+      - package: SQLite.swift
+      - package: Charts
+
+packages:
+  SQLite.swift:
+    url: https://github.com/stephencelis/SQLite.swift
+    from: "0.14.1"
+  Charts:
+    url: https://github.com/danielgindi/Charts
+    from: "5.0.0"
