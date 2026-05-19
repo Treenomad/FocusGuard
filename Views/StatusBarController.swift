@@ -4,7 +4,7 @@ import SwiftUI
 class StatusBarController {
     static var existingInstance: StatusBarController?
 
-    var statusItem: NSStatusItem
+    var statusItem: NSStatusItem?
     var timer: Timer?
 
     init() {
@@ -15,7 +15,7 @@ class StatusBarController {
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
-        if let button = statusItem.button {
+        if let button = statusItem?.button {
             button.image = NSImage(systemSymbolName: "eye.fill", accessibilityDescription: "FocusGuard")
         }
 
@@ -65,7 +65,7 @@ class StatusBarController {
         let quitItem = NSMenuItem(title: "退出", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         menu.addItem(quitItem)
 
-        statusItem.menu = menu
+        statusItem?.menu = menu
     }
 
     @objc func openMainWindow() {
