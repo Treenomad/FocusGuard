@@ -19,19 +19,26 @@ targets:
     type: application
     platform: macOS
     sources:
-      - path: FocusGuard
-        type: group
+      - path: .
+        excludes:
+          - "*.yml"
+          - "*.md"
+          - .github
+          - docs
+          - "project.xcconfig"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.treenomad.FocusGuard
-        INFOPLIST_FILE: FocusGuard/Info.plist
+        INFOPLIST_FILE: Info.plist
         PRODUCT_NAME: FocusGuard
         COMBINE_HIDPI_IMAGES: YES
         LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks"
-        ENABLE_HARDENDE_RUNTIME: NO
+        ENABLE_HARDENED_RUNTIME: NO
     dependencies:
       - package: SQLite.swift
+        product: SQLite
       - package: Charts
+        product: DGCharts
 
 packages:
   SQLite.swift:

@@ -33,7 +33,6 @@ class MonitoringService {
 
         let now = Date()
         let bundleId = currentApp.bundleIdentifier ?? "unknown"
-        let appName = currentApp.localizedName ?? "Unknown App"
 
         // Record usage if app changed or after interval
         if let lastApp = lastActiveApp, let lastTime = lastCheckTime {

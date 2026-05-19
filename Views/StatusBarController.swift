@@ -62,17 +62,8 @@ class StatusBarController {
     }
 
     @objc func openMainWindow() {
-        let contentView = ContentView()
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 400, height: 500),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable],
-            backing: .buffered,
-            defer: false
-        )
-        window.title = "FocusGuard"
-        window.contentView = NSHostingView(rootView: contentView)
-        window.center()
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        if let appDelegate = NSApp.delegate as? AppDelegate {
+            appDelegate.showMainWindow()
+        }
     }
 }
