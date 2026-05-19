@@ -33,6 +33,7 @@ class MonitoringService {
 
         let now = Date()
         let bundleId = currentApp.bundleIdentifier ?? "unknown"
+        let appName = currentApp.localizedName ?? "Unknown"
 
         // Record usage if app changed or after interval
         if let lastApp = lastActiveApp, let lastTime = lastCheckTime {
@@ -50,6 +51,12 @@ class MonitoringService {
                     appName: lastApp.localizedName ?? "Unknown",
                     duration: duration
                 )
+
+                // Check limit for the app we just left
+                checkLimitAndNotify(
+                    bundleId: lastApp.bundleIdentifier ?? "",
+                    appName: lastApp.localizedName ?? "Unknown"
+                )
             }
         }
 
@@ -58,6 +65,22 @@ class MonitoringService {
 
         // Post notification for UI update
         NotificationCenter.default.post(name: .usageUpdated, object: nil)
+    }
+
+    private func checkLimitAndNotify(bundleId: String, appName: String) {
+        guard let limitSeconds = DatabaseManager.shared.getLimit(for: bundleId) else { return }
+
+        let todayRecords = DatabaseManager.shared.getTodayUsage()
+        let totalUsage = todayRecords
+            .filter { $0.appBundleId == bundleId }
+            .reduce(0) { $0 + $1.durationSeconds }
+
+        if totalUsage >= limitSeconds {
+            NotificationService.shared.sendLimitExceededNotification(
+                appName: appName,
+                limitMinutes: limitSeconds / 60
+            )
+        }
     }
 }
 

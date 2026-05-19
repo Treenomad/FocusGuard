@@ -112,14 +112,63 @@ class DatabaseManager {
         return records
     }
 
-    func getTopAppsToday(limit: Int = 5) -> [(appName: String, totalDuration: Int)] {
+    func getTopAppsToday(limit: Int = 5) -> [(appName: String, bundleId: String, totalDuration: Int)] {
         let todayRecords = getTodayUsage()
-        var appTotals: [String: Int] = [:]
+        var appTotals: [String: (name: String, duration: Int)] = [:]
 
         for record in todayRecords {
-            appTotals[record.appName, default: 0] += record.durationSeconds
+            let existing = appTotals[record.appBundleId]?.duration ?? 0
+            appTotals[record.appBundleId] = (name: record.appName, duration: existing + record.durationSeconds)
         }
 
-        return appTotals.sorted { $0.value > $1.value }.prefix(limit).map { ($0.key, $0.value) }
+        return appTotals.sorted { $0.value.duration > $1.value.duration }.prefix(limit).map { (appName: $0.value.name, bundleId: $0.key, totalDuration: $0.value.duration) }
+    }
+
+    // MARK: - Limit Management
+
+    func getLimit(for bundleId: String) -> Int? {
+        do {
+            let query = appLimits.filter(appBundleId == bundleId)
+            if let row = try db?.pluck(query) {
+                return Int(row[dailyLimitSeconds])
+            }
+        } catch {
+            print("Query limit failed: \(error)")
+        }
+        return nil
+    }
+
+    func setLimit(for bundleId: String, limitSeconds: Int) {
+        do {
+            let insert = appLimits.insert(
+                or: .replace,
+                appBundleId <- bundleId,
+                dailyLimitSeconds <- Int64(limitSeconds)
+            )
+            try db?.run(insert)
+        } catch {
+            print("Set limit failed: \(error)")
+        }
+    }
+
+    func getAllLimits() -> [String: Int] {
+        var limits: [String: Int] = [:]
+        do {
+            for row in try db?.prepare(appLimits) ?? AnySequence([]) {
+                limits[row[appBundleId]] = Int(row[dailyLimitSeconds])
+            }
+        } catch {
+            print("Query all limits failed: \(error)")
+        }
+        return limits
+    }
+
+    func deleteLimit(for bundleId: String) {
+        do {
+            let query = appLimits.filter(appBundleId == bundleId)
+            try db?.run(query.delete())
+        } catch {
+            print("Delete limit failed: \(error)")
+        }
     }
 }

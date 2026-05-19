@@ -44,7 +44,7 @@ class StatusBarController {
             emptyItem.isEnabled = false
             menu.addItem(emptyItem)
         } else {
-            for (appName, duration) in topApps {
+            for (appName, _, duration) in topApps {
                 let minutes = duration / 60
                 let item = NSMenuItem(title: "  \(appName): \(minutes)m", action: nil, keyEquivalent: "")
                 item.isEnabled = false
