@@ -2,10 +2,17 @@ import Cocoa
 import SwiftUI
 
 class StatusBarController {
+    static var existingInstance: StatusBarController?
+
     var statusItem: NSStatusItem
     var timer: Timer?
 
     init() {
+        if StatusBarController.existingInstance != nil {
+            return
+        }
+        StatusBarController.existingInstance = self
+
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         if let button = statusItem.button {
