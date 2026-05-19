@@ -1,0 +1,67 @@
+import Cocoa
+
+class MonitoringService {
+    static let shared = MonitoringService()
+
+    private var timer: Timer?
+    private var lastActiveApp: NSRunningApplication?
+    private var lastCheckTime: Date?
+
+    private init() {}
+
+    func start() {
+        guard timer == nil else { return }
+
+        lastCheckTime = Date()
+        lastActiveApp = NSWorkspace.shared.frontmostApplication
+
+        timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
+            self?.checkActiveApp()
+        }
+
+        // Initial check
+        checkActiveApp()
+    }
+
+    func stop() {
+        timer?.invalidate()
+        timer = nil
+    }
+
+    private func checkActiveApp() {
+        guard let currentApp = NSWorkspace.shared.frontmostApplication else { return }
+
+        let now = Date()
+        let bundleId = currentApp.bundleIdentifier ?? "unknown"
+        let appName = currentApp.localizedName ?? "Unknown App"
+
+        // Record usage if app changed or after interval
+        if let lastApp = lastActiveApp, let lastTime = lastCheckTime {
+            let duration = Int(now.timeIntervalSince(lastTime))
+            if lastApp.bundleIdentifier == bundleId {
+                // Same app, accumulate duration
+                DatabaseManager.shared.updateUsageDuration(
+                    bundleId: lastApp.bundleIdentifier ?? "",
+                    duration: duration
+                )
+            } else {
+                // App changed, record previous app and start new
+                DatabaseManager.shared.insertUsageRecord(
+                    bundleId: lastApp.bundleIdentifier ?? "",
+                    appName: lastApp.localizedName ?? "Unknown",
+                    duration: duration
+                )
+            }
+        }
+
+        lastActiveApp = currentApp
+        lastCheckTime = now
+
+        // Post notification for UI update
+        NotificationCenter.default.post(name: .usageUpdated, object: nil)
+    }
+}
+
+extension Notification.Name {
+    static let usageUpdated = Notification.Name("usageUpdated")
+}
